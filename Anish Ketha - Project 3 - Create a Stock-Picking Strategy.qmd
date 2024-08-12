@@ -1,0 +1,398 @@
+---
+title: "Anish Ketha - Project 3 - Create a Stock-Picking Strategy"
+format: html
+editor: visual
+---
+
+# **Project 3 Report**
+
+## Project Overview
+
+Built and evaluated the performance of several renowned factor investing strategies:
+
+1.  Momentum
+2.  Value
+3.  Quality
+4.  Defensive (Low Risk)
+
+```{r}
+library(zoo)
+library(xts)
+library(quantmod)
+```
+
+```{r}
+
+# Remember to change his directory to your local folder
+datalink <- "Stock Picking Data/Stock Picking Data/Stock Data "
+```
+
+# Momentum Investing
+
+```{r}
+signal <- "ret_12_1"
+description <- "Past 12-month Return"
+
+# Define the range of years and quarters
+years <- 1980:2022
+quarters <- 1:4
+
+# Generate all combinations of years and quarters
+decile_df <- expand.grid(year = years, quarter = quarters)
+decile_df[, paste0("Decile ", 1:10)] <- NaN
+```
+
+```{r}
+decile_sorts <- function(data, signal, description, plot = TRUE){
+    df_test <- data[, c("yearq","ticker","sp500","r1000","r2000","ret","market_equity")]
+    df_test$signal <- data[[signal]]
+    
+    df_test <- na.omit(df_test)
+    
+    # Sort the data by market_equity from low to high
+    df_test <- df_test[order(df_test$signal, na.last = TRUE), ]
+    
+    # Assign rankings to the sorted data
+    df_test$rank <- rank(df_test$signal, ties.method = "first")
+    
+    # Create decile rankings based on market_equity
+    df_test$decile <- cut(df_test$rank, 
+                          breaks = 10,
+                          include.lowest = TRUE, labels = 1:10)
+    
+    # Calculate average returns for each decile
+    equal_weighted_decile_returns <- tapply(df_test$ret, df_test$decile, mean, na.rm = TRUE)
+     
+    if (plot == TRUE) {
+        barplot(equal_weighted_decile_returns * 100, names.arg = 1:10,  
+                main = paste("Equal-Weighted Average Returns", description, "Deciles -", yearq), 
+                xlab = "Decile", ylab = "%", col = "blue")
+    }
+    return(equal_weighted_decile_returns)
+}
+```
+
+```{r}
+
+# Loop over each year and calculate decile sorted portfolio returns
+for (year in years) {
+  for (quarter in quarters){
+    yearq <- year*100 + quarter
+    # Load the dataset for the current year
+    data <- read.csv(paste(datalink, as.character(yearq), ".csv", sep = ""))
+    
+    # Calculate decile returns for the current year
+    decile_returns <- decile_sorts(data = data, signal = signal, description = description)
+
+    # Store the results in the matrix
+    decile_df[decile_df$year == year & decile_df$quarter == quarter, paste0("Decile ", 1:10)] <- as.numeric(decile_returns) 
+  }
+}
+
+```
+
+```{r}
+
+# Function to convert year and quarter to quarter end date 
+convert_to_quarter_end <- function(year, quarter) {
+  if (quarter == 1) {
+    return(paste(year, "03", "31", sep = "-"))
+  } else if (quarter == 2) {
+    return(paste(year, "06", "30", sep = "-"))
+  } else if (quarter == 3) {
+    return(paste(year, "09", "30", sep = "-"))
+  } else if (quarter == 4) {
+    return(paste(year, "12", "31", sep = "-"))
+  }
+}
+
+# Apply the function to each combination
+decile_df$QuarterEnd <- mapply(convert_to_quarter_end, decile_df$year, decile_df$quarter)
+
+# Convert the matrix to an xts object
+decile_xts <- xts(decile_df[, paste0("Decile ", 1:10)], order.by = as.yearqtr(as.Date(decile_df$QuarterEnd)))
+
+# Display the resulting dataframe
+decile_xts
+```
+
+# Momentum Investing Comments
+
+### Sorting Function for Decile Portfolios
+
+The `decile_sorts` function sorts stocks into deciles based on the specified signal and calculates the equal-weighted average returns for each decile.
+
+The function `decile_sorts` handles the data sorting into deciles based on the past 12-month return signal. It also calculates the average return for each decile and optionally plots these returns.
+
+### Loop Over Each Year and Quarter
+
+This loop processes each year and quarter, loading the respective data, and calculating the decile returns. It stores these returns in `decile_df`
+
+### Convert Year and Quarter to Quarter End Date
+
+The function `convert_to_quarter_end` converts the year and quarter into the corresponding quarter-end date, essential for accurate time-series analysis.
+
+### Convert to XTS and Display Data
+
+Convert the data frame `decile_df` to an XTS object for time series analysis and visualization.
+
+The XTS object `decile_xts` now contains the decile returns for each time period, allowing for advanced time-series analysis and visualization. There is extensive data processing as we loop over each year and quarter, but allows for detailed tracking of the historical performance of decile portfolios
+
+# 3. Performance Evaluation
+
+```{r}
+# Calculate cumulative returns for each decile
+cumulative_returns <- apply(decile_xts + 1, 2, cumprod)
+
+# Plot cumulative returns for each decile
+matplot(index(decile_xts), cumulative_returns, type = "l", lty = 1, col = rainbow(10), 
+        xlab = "Quarters", ylab = "$1", main = paste("Value of $1 Invested in", description, "Deciles"), log = "y", axes = FALSE)
+
+# Customizing the y-axis to display as 1, 10, 100, 1000, etc.
+y_ticks <- c(1, 10, 100, 1000) 
+axis(2, at = y_ticks, labels = y_ticks)
+
+x_ticks <- c('1980 Q4', '1990 Q4', '2000 Q4', '2010 Q4', '2020 Q4')
+axis(1, at = as.yearqtr(x_ticks), labels = x_ticks)
+
+# Add legend
+legend("topleft", legend = colnames(decile_xts), col = rainbow(10), lty = 1, cex = 0.7)
+
+```
+
+```{r}
+# Plot cumulative returns for each decile
+matplot(index(decile_xts), cumulative_returns[,c(1,10)], type = "l", lty = 1, col = rainbow(10), 
+        xlab = "Quarters", ylab = "$1", main = paste("Value of $1 Invested in", description, "Deciles"), log = "y", axes = FALSE)
+
+# Customizing the y-axis to display as 1, 10, 100, 1000, etc.
+y_ticks <- c(1, 10, 100, 1000) 
+axis(2, at = y_ticks, labels = y_ticks)
+
+x_ticks <- c('1980 Q4', '1990 Q4', '2000 Q4', '2010 Q4', '2020 Q4')
+axis(1, at = as.yearqtr(x_ticks), labels = x_ticks)
+
+# Add legend
+legend("topleft", legend = colnames(decile_xts)[c(1,10)], col = rainbow(10), lty = 1, cex = 0.7)
+```
+
+```{r}
+barplot(colMeans(decile_xts) * 100, names.arg = 1:10,  
+        main = paste("EW Average Returns", description, "Deciles, 1980-2022"), 
+        xlab = "Decile", ylab = "%", col = "blue")
+```
+
+```{r}
+# Set up the plotting area
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+
+# Plot decile 1 returns
+barplot(decile_xts[,1] * 100, 
+        main = paste(description, "Decile 1 Returns"), ylab = "%", col = "blue")
+
+# Plot decile 10 returns
+barplot(decile_xts[,10] * 100,  
+        main = paste(description, "Decile 10 Returns"), ylab = "%", col = "green")
+
+# Plot decile 10 minus decile 1 returns
+barplot((decile_xts[,10]-decile_xts[,1]) * 100,  
+        main = paste(description, "Decile 10 - Decile 1 Returns"), ylab = "%", col = "red")
+
+# Reset plotting parameters
+par(mfrow = c(1, 1))
+```
+
+```{r}
+univariate_sorts <- function(signal, description, trade_direction = "High-Low",  start_year = 1980, end_year = 2022, yearly_barplot = FALSE){
+ 
+  # Define the range of years and quarters
+  years <- start_year:end_year
+  quarters <- 1:4
+  
+  # Generate all combinations of years and quarters
+  decile_df <- expand.grid(year = years, quarter = quarters)
+  decile_df[, paste0("Decile ", 1:10)] <- NaN
+  
+  # Loop over each year and calculate decile sorted portfolio returns
+  for (year in years) {
+    for (quarter in quarters){
+      yearq <- year*100 + quarter
+      # Load the dataset for the current year
+      data <- read.csv(paste(datalink, as.character(yearq), ".csv", sep = ""))
+      
+      # Calculate decile returns for the current year
+      decile_returns <- decile_sorts(data = data, signal = signal, description = description, plot = yearly_barplot)
+  
+      # Store the results in the matrix
+      decile_df[decile_df$year == year & decile_df$quarter == quarter, paste0("Decile ", 1:10)] <- as.numeric(decile_returns) 
+    }
+  }
+  
+  # Function to convert year and quarter to quarter end date
+  convert_to_quarter_end <- function(year, quarter) {
+    if (quarter == 1) {
+      return(paste(year, "03", "31", sep = "-"))
+    } else if (quarter == 2) {
+      return(paste(year, "06", "30", sep = "-"))
+    } else if (quarter == 3) {
+      return(paste(year, "09", "30", sep = "-"))
+    } else if (quarter == 4) {
+      return(paste(year, "12", "31", sep = "-"))
+    }
+  }
+  
+  # Apply the function to each combination
+  decile_df$QuarterEnd <- mapply(convert_to_quarter_end, decile_df$year, decile_df$quarter)
+  
+  # Convert the matrix to an xts object
+  decile_xts <- xts(decile_df[, paste0("Decile ", 1:10)], order.by = as.yearqtr(as.Date(decile_df$QuarterEnd)))
+  
+  if (trade_direction == "High-Low"){
+    decile_xts$LongShort <- decile_xts[,10] - decile_xts[,1]
+  } else{
+    decile_xts$LongShort <- decile_xts[,1] - decile_xts[,10]
+  }
+  
+  
+  # Calculate cumulative returns for each decile
+  cumulative_returns <- apply(decile_xts + 1, 2, cumprod)
+  
+  # Plot cumulative returns for each decile
+  matplot(index(decile_xts), cumulative_returns[,1:10], type = "l", lty = 1, col = rainbow(10), 
+          xlab = "", ylab = "Cumulative Value ($)", main = paste("Value of $1 Invested in", description, "Deciles"), log = "y", axes = FALSE)
+  
+  # Customizing the y-axis to display as 1, 10, 100, 1000, etc.
+  y_ticks <- c(1, 10, 100, 1000) 
+  axis(2, at = y_ticks, labels = y_ticks)
+  
+  x_ticks <- c('1980 Q4', '1990 Q4', '2000 Q4', '2010 Q4', '2020 Q4')
+  axis(1, at = as.yearqtr(x_ticks), labels = x_ticks)
+  
+  # Add legend
+  legend("topleft", legend = colnames(decile_xts[,1:10]), col = rainbow(10), lty = 1, lwd = 2, cex = 0.7)
+  
+  barplot(colMeans(decile_xts[,1:10]) * 12 * 100, names.arg = 1:10,  
+          main = paste("EW Average Returns to ", description, "Deciles, 1980-2022"), 
+          xlab = paste(description, "Deciles"), ylab = "Annualized Return (%)", col = "blue")
+  # Set up the plotting area
+  par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+  
+  
+  # Set y-axis limits
+  y_limits <- c(min(decile_xts[,1:10]), max(decile_xts[,1:10])) * 100
+
+  # Plot decile 1 returns
+  barplot(decile_xts[,1] * 100, ylim = y_limits, 
+          main = paste("Quarterly Returns to", description, "Decile 1"), ylab = "Return (%)", col = "blue")
+  
+  # Plot decile 10 returns
+  barplot(decile_xts[,10] * 100, ylim = y_limits, 
+          main = paste("Quarterly Returns to", description, "Decile 10"), ylab = "Return (%)", col = "green")
+  
+  # Plot decile 10 minus decile 1 returns
+  barplot(decile_xts$LongShort * 100, ylim = y_limits, 
+          main = paste("Quarterly Returns to", description, "Decile 10 - Decile 1"), ylab = "Return (%)", col = "red")
+  
+  # Reset plotting parameters
+  par(mfrow = c(1, 1))
+
+  # Plot cumulative returns for each decile
+  matplot(index(decile_xts), cumulative_returns[,11], type = "l", lty = 1, lwd = 2, col = rainbow(10), 
+          xlab = "", ylab = "Cumulative Value ($)", main = paste("Value of $1 Invested in the", trade_direction, description, "Strategy"))
+  
+  return(decile_xts)
+}
+
+```
+
+# Value Investing
+
+```{r}
+value_deciles <- univariate_sorts(signal = "be_me", description = "Value")
+```
+
+# Graph 1: Value of \$1 Invested in Value Deciles
+
+**Graph Interpretation**: This graph shows the growth of \$1 invested in each value decile from 1980 to 2022. Deciles are formed based on the Book-to-Market (B/M) ratio, with Decile 1 representing stocks with the lowest B/M ratios (often growth stocks) and Decile 10 representing stocks with the highest B/M ratios (often value stocks).
+
+**Strategy:** Buy stocks in higher deciles (7-10) as these stocks have high Book-to-Market ratios, indicating value stocks that are potentially undervalued. Sell stocks in lower deciles (1-3) as these stocks have lower Book-to-Market ratios, indicating growth stocks that might be overvalued.
+
+# Graph 2: EW Average Returns to Value Deciles
+
+**Graph Interpretation**: The bar graph shows the average annualized returns for each decile. Higher deciles show higher returns.
+
+**Strategy:** Favor investing in stocks with higher B/M ratios (Deciles 9-10) to capture the value premium.
+
+# Graph 3: Quarterly Returns to Value based on Decile
+
+**Graph Interpretation:** The bar plots display the quarterly returns and spread, highlighting the performance of certain value and growth stocks of varying deciles. A positive spread indicates that value stocks outperform growth stocks.
+
+**Strategy:** Monitor the spread for market trends and adjust positions accordingly.
+
+# Graph 4: Value of \$1 Invested in the High-Low Value Strategy
+
+**Graph Interpretation:** This line graph shows how the cumulative return changes overtime from 1980-2020. The cumulative return stays volatile as time goes one with many peaks and lows. There are periods of underperformance in the late 1990s and early 200s, as wells as 2010 and 2020, most likely due to the housing-market crash and COVID-19 pandemic.
+
+**Strategy:** Invest in stocks with high B/M ratios, typically considered value stocks. These stocks are often perceived as undervalued by the market, providing potential for higher returns when the market corrects its valuation. Short stocks with low B/M ratios as shoritng them can potentially profit from price corrects. Overall, be vary as the performance varies significantly over time as shown by the graph with multiple periods of under performance.
+
+# Quality Investing
+
+```{r}
+# Quality Strategies
+quality_deciles <- univariate_sorts(signal = "gp_at", description = "Quality")
+```
+
+# Graph 1: Value of \$1 Invested in Quality Deciles
+
+**Graph Interpretation**: This graph tracks the growth of \$1 invested in each quality decile, based on the gross profitability to assets ratio.
+
+**Strategy:** Buy stocks in higher deciles (7-10) with higher quality metrics, indicating efficient and profitable companies. Sell stocks in lower deciles (1-3) as these stocks have lower gross profit to assets ratios, indicating less efficient companies.
+
+# Graph 2: EW Average Returns to Quality Deciles
+
+**Graph Interpretation**: This graph shows the average annualized returns for each quality decile. Graph indicates higher deciles show higher returns.
+
+**Strategy:** Prioritize stocks in higher quality deciles (Deciles 9-10) to benefit from the quality premium.
+
+# Graph 3: Quarterly Returns to Quality based on Decile
+
+**Graph Interpretation:** Quarterly return bar plots for Decile 1, Decile 10, and the spread between them, indicating performance differences based on quality metrics.
+
+**Strategy:** Use the spread between high and low-quality stocks to gauge market conditions and adjust portfolios to capitalize on quality-driven performance.
+
+# Graph 4: Value of \$1 Invested in the High-Low Quality Strategy
+
+**Graph Interpretation:** This line graph shows how the cumulative return changes overtime from 1980-2020 from a strategy that buys high-quality stocks (Decile 10) and shorts low-quality stocks (Decile 1). The cumulative return larger as time goes on. There is a slight drop in 2020, most likely due to the 2020 COVID-19 pandemic
+
+**Strategy:** Implement a long-short strategy favoring high-quality stocks while shorting low-quality stocks to exploit the quality premium.
+
+# Defensive (Low Risk) Investing
+
+```{r}
+# Defensive Strategies
+quality_deciles <- univariate_sorts(signal = "betabab_1260d", description = "Defensive", trade_direction = "Low-High")
+```
+
+# Graph 1: Value of \$1 Invested in Defensive Deciles
+
+**Graph Interpretation**: This graph tracks the growth of \$1 invested in each quality defensive decile, based on beta, which is a measure of volatility.
+
+**Strategy:** Buy stocks in lower deciles (1-3), which represent low-risk, low-volatility stocks that are less sensitive to market movements. Sell stocks in higher deciles (8-10), which are higher-risk, higher-volatility stocks.
+
+# Graph 2: EW Average Returns to Defensive Deciles
+
+**Graph Interpretation**: This graph highlights the average annualized returns for each defensive decile, with lower deciles generally showing more stable returns.
+
+**Strategy:** Focus on lower deciles for more stable, defensive investments, especially in volatile or bear markets.
+
+# Graph 3: Quarterly Returns to Defensive based on Decile
+
+**Graph Interpretation:** These plots show the quarterly returns for Decile 1 (low risk), Decile 10 (high risk), and the spread between them, which can be indicative of risk premiums.
+
+**Strategy:** Analyze the spread to assess risk aversion in the market and adjust investments to align with more defensive strategies but also discover the more aggressive strategies.
+
+# Graph 4: Value of \$1 Invested in the High-Low Defensive Strategy
+
+**Graph Interpretation:** The line graph tracks how much \$1 invested in this strategy would grow over the years. The graph shows fluctuations and a general decline in value, especially noticeable from the late 1990s onwards. The most severe drops are seen during and after the Dot-Com bubble burst in the early 2000s and the 2008 Financial Crisis.
+
+**Strategy:** With defensive investing, we think low-risk stocks will outperform high-risk stocks over time. This is based on the observation and our graphs that, on average, low-beta stocks have provided better risk-adjusted returns compared to high-beta stocks. So we want to go long on low-risk (low beta) stocks as there stocks are characterized by lower valotility and seen as safer investments. We want to sell high-risk (high beta) stocks as there are more volatile and affected more by market fluctuations.
