@@ -1,0 +1,77 @@
+---
+title: "Anish Ketha - Practice 14 - Factor Investing Signal Sorted Portfolios"
+format: html
+editor: visual
+---
+
+## 
+
+# **Practice 14 Answers**
+
+# Read data
+
+```{r}
+library(zoo)
+library(xts)
+library(quantmod)
+# change the directory to your local folder.
+datalink <- "Stock Picking Data/Stock Picking Data/Stock Data "
+
+yearq <- 199503
+# Load the dataset
+data <- read.csv(paste(datalink, as.character(yearq),".csv", sep = ""))
+
+# Russell 1000 stocks
+data <- data[data$r1000 == 1,]
+
+```
+
+# Step 1: Get signal
+
+```{r}
+df_test <- data[, c("yearq","ticker","sp500","r1000","r2000","ret")]
+df_test$signal <- data$market_equity
+tail(df_test,10)
+```
+
+# Step 2: Sort stocks low to high by equity
+
+```{r}
+# Sort the data by market_equity from low to high
+df_test <- df_test[order(df_test$signal, na.last = TRUE), ]
+
+# Assign rankings
+df_test$rank <- rank(df_test$signal, ties.method = "first")
+
+tail(df_test,10)
+```
+
+# Step 3: Create decile rankings based on equity
+
+```{r}
+# Create decile rankings based on market_equity
+df_test$decile <- cut(df_test$rank, 
+                      breaks = 10,
+                      include.lowest = TRUE, labels = 1:10)
+
+#  distribution
+tail(df_test,10)
+
+
+```
+
+# Step 4: Calculate avg return of stock per portfolio
+
+```{r}
+# average returns for each decile
+equal_weighted_decile_returns <- tapply(df_test$ret, df_test$decile, mean, na.rm = TRUE)
+
+```
+
+# Step 5: Returns of portflios in bar plot
+
+```{r}
+barplot(equal_weighted_decile_returns * 100, names.arg = 1:10, 
+        main = paste("Small-Cap Investing: Market Value", yearq), 
+        xlab = "Decile", ylab = "%", col = "blue")
+```

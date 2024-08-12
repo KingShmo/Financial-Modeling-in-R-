@@ -1,0 +1,64 @@
+---
+title: "Anish Ketha - Practice 9 - Risk-Return Trade-off"
+format: html
+editor: visual
+---
+
+## Practice 9 Answers
+
+### Exercise 1
+
+```{r}
+library(quantmod)
+# Download history of QQQ 
+getSymbols("QQQ", src = "yahoo", from = '1900-01-01', to = Sys.Date())
+
+# monthly returns for QQQ
+qqq_monthly_ret <- monthlyReturn(Ad(QQQ))
+
+# Download the Federal Funds Effective Rate from FRED
+getSymbols("DFF", src = "FRED", from = '1900-01-01', to = Sys.Date())
+
+# Converts the daily data to monthly data.
+# Convert daily Federal Funds Effective Rate to monthly and annualized (divide by 12)
+dff_monthly <- to.monthly(DFF, indexAt = "lastof", OHLC = FALSE) / 100 / 12
+
+# Align dates of returns and risk-free rate
+returns_and_rf <- merge(qqq_monthly_ret, dff_monthly, join = "inner")
+
+# Rename columns 
+colnames(returns_and_rf) <- c("QQQ_Returns", "RF_Rate")
+
+# Calculate excess 
+returns_and_rf$Excess_Returns <- returns_and_rf$QQQ_Returns - returns_and_rf$RF_Rate
+
+# Calculate annualized excess
+annualized_excess_return <- mean(returns_and_rf$Excess_Returns, na.rm = TRUE) * 12 * 100
+
+# Calculate annualized volatility of excess returns
+annualized_volatility <- sd(returns_and_rf$Excess_Returns, na.rm = TRUE) * sqrt(12) * 100
+
+sharpe_ratio <- annualized_excess_return / annualized_volatility
+
+# Print the results
+cat("Annualized Excess Return (in %):\n")
+print(annualized_excess_return)
+cat("Annualized Volatility (in %):\n")
+print(annualized_volatility)
+cat("Sharpe Ratio:\n")
+print(sharpe_ratio)
+```
+
+### Exercise 2
+
+```{r}
+# Calculate daily returns
+qqq_daily_ret <- dailyReturn(Ad(QQQ))
+
+# Calculate 21-day realized volatility
+realized_volatility <- rollapply(qqq_daily_ret, width = 21, FUN = sd, by = 1, fill = NA) * sqrt(252)
+
+# Plot it
+plot(index(realized_volatility), coredata(realized_volatility), type = "l", col = "blue", 
+     main = "21-Day Rolling Realized Volatility of QQQ", xlab = "Date", ylab = "Realized Volatility")
+```

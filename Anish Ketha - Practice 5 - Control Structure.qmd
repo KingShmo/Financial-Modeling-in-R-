@@ -1,0 +1,119 @@
+---
+title: "Anish Ketha - Practice 5 - Control Structure"
+format: html
+editor: visual
+---
+
+## Practice 5 Answers
+
+### Exercise 1
+
+```{r}
+x <- 80
+
+#if-else
+if(x > 60) {
+    rule <- "Buy"
+} else {
+    rule <- "Sell"
+}
+
+print(rule)
+
+#ifelse
+x <- 80
+
+rule <- ifelse(x > 60, "Buy", "Sell")
+
+print(rule)
+#part c
+x <- 95
+
+if(x > 90) {
+    grade <- "Buy"
+} else if(x >= 70) {
+    grade <- "Hold"
+} else {
+    grade <- "Sell"
+}
+
+print(grade)
+#partd
+x <- 95
+
+rule <- ifelse(x > 90, "Buy", ifelse(x >= 70, "Hold", "Sell"))
+
+print(rule)
+```
+
+### Exercise 2
+
+```{r}
+for (i in 1:10) {
+    square <- i^2
+    print(square)
+}
+#partb
+sum <- 0
+
+for (i in 100:1000) {
+    sum <- sum + i
+}
+
+print(sum)
+```
+
+### Exercise 3 (optional)
+
+```{r}
+# Set seed
+set.seed(123)
+
+# periods
+n <- 1000
+
+
+p <- numeric(n)
+
+p[1] <- 100
+
+
+for (t in 2:n) {
+ 
+    epsilon <- rnorm(1)
+    
+    # Calculate the price at time t
+  
+    p[t] <- p[t-1] +  epsilon
+}
+
+# Plot the price values 
+plot(p, type = "l", main = "Random Walk without Drift", xlab = "Time", ylab = "Price")
+#u=0.05
+# Set seed
+set.seed(123)
+
+
+n <- 1000
+
+
+mu <- 0.05
+
+
+p <- numeric(n)
+
+# Set the initial price
+p[1] <- 100
+
+
+for (t in 2:n) {
+    # Generate a random value 
+    epsilon <- rnorm(1)
+    
+    # Calculate the price 
+    p[t] <- p[t-1] + mu + epsilon
+}
+
+# Plot the price values 
+plot(p, type = "l", main = "Random Walk with Drift", xlab = "Time", ylab = "Price")
+```

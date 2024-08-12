@@ -1,0 +1,70 @@
+---
+title: "Anish Ketha - Practice 10 - Trading Rules and Backtesting"
+format: html
+editor: visual
+---
+
+## **Practice 10 Answers**
+
+#### **Exercise 1**
+
+```{r}
+library(quantmod)
+qqq <- getSymbols("QQQ", src = "yahoo", auto.assign = FALSE, from = '1990-01-01', to = '2024-06-30')
+spy_ret = dailyReturn(Ad(qqq))
+colnames(spy_ret) <- "Ret"
+tail(spy_ret, 10)
+
+rf <- getSymbols("DFF", src = "FRED", auto.assign = FALSE, from = '1990-01-01', to = '2024-06-30')
+#convert it to daily frequency by dividing 360 
+rf <- rf/360/100
+colnames(rf) <- 'Rf'
+tail(rf, 10)
+
+# Calculate daily returns
+qqq_daily_ret <- dailyReturn(Ad(qqq))
+# Calculate 21-day realized volatility
+rv <- rollapply(qqq_daily_ret, width = 21, FUN = sd, by = 1, fill = NA) * sqrt(252)
+colnames(rv) <- 'RV'
+tail(rv, 10)
+
+test_data <- merge(spy_ret, rf, join = "inner")
+test_data <- merge(test_data, rv, join = "inner")
+tail(test_data, 10)
+
+#define strategy rules
+test_data$TradingSignal <- test_data$RV
+test_data$TradingRule <- 1/test_data$TradingSignal
+#lag
+test_data$TradingRule <- lag(test_data$TradingRule, 1)
+#leverage 
+Leverage <- 1/10
+
+#backtesting period
+TradingPeriod <- "1993/2024"
+test_data <- test_data[TradingPeriod]
+
+test_data <- na.omit(test_data)
+# Calculate returns
+test_data$RetRf <- test_data$Ret - test_data$Rf
+test_data$Vol_Managed_RetRf <- Leverage * test_data$TradingRule * test_data$RetRf
+
+print(paste('Annualized Excess Return: ', round(mean(test_data$Vol_Managed_RetRf)*252*100, 2), '%'))
+
+print(paste('Annualized Volatility: ', round(sd(test_data$Vol_Managed_RetRf)*sqrt(252)*100, 2), '%'))
+
+print(paste('Annualized Sharpe Ratio: ', round(mean(test_data$Vol_Managed_RetRf)/sd(test_data$Vol_Managed_RetRf)*sqrt(252), 2)))
+
+test_data$Vol_Managed_Cumulative_Value <- cumprod(1 + test_data$Vol_Managed_RetRf)  
+# Plot returns
+plot(index(test_data), test_data$Vol_Managed_Cumulative_Value, type = "l", col = "blue", lwd = 2, 
+     ylab = "$", xlab = "Date", main = "Value of $1 invested in Volatility-Managed Strategy")
+
+# Plot returns for each decile
+matplot(index(test_data), test_data$Vol_Managed_Cumulative_Value, type = "l", lty = 1, lwd = 2, 
+        xlab = "Date", ylab = "$", main = paste("Value of $1 invested in Volatility-Managed Strategy (Log Scale)"), log = "y", axes = FALSE)
+
+# Customizing the y-axis 
+y_ticks <- c(1, 2, 4, 8, 16) 
+axis(2, at = y_ticks, labels = y_ticks)
+```

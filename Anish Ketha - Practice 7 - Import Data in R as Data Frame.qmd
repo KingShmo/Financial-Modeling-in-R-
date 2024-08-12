@@ -1,0 +1,101 @@
+---
+title: "Anish Ketha - Practice 7 - Import Data in R as Data Frame"
+format: html
+editor: visual
+---
+
+## Practice 7 Answers
+
+### Exercise 1
+
+```{r}
+install.packages("xts", repos = "https://cran.rstudio.com/")
+
+# Load the xts package
+library(xts)
+
+
+df <- read.csv("Daily S&P 500 Index.csv")
+data_link <- "https://www.dropbox.com/scl/fi/vmbh3wxsnzgm44gi3afkj/Daily-S-P-500-Index.csv?rlkey=4o0y4m9eap6wsj86hyr8bojw7&dl=1"
+df <- read.csv(data_link)
+str(df)
+
+head(df)
+tail(df)
+
+```
+
+```{r}
+#b
+df <- read.csv(data_link, nrows = 2)
+head(df)
+```
+
+```{r}
+#c
+df <- read.csv(data_link, skip = 3)
+head(df)
+```
+
+### Exercise 2
+
+```{r}
+df <- read.csv(data_link)
+tail(df, 10)
+```
+
+```{r}
+#b
+colnames(df) <- c("Date", "Open", "High", "Low", "Close", "Volume", "Close_Adj")
+head(df)
+```
+
+```{r}
+#c
+df$Date = as.Date(df$Date, format = "%Y-%m-%d")
+str(df)
+
+#d
+
+# Convert  "Close" column to xts in order of dates
+close_price <- xts(df[, "Close"], order.by = df$Date)
+volume <- xts(df[, "Volume"], order.by = df$Date)
+# Present volume in million.
+volume <- volume/1e6
+plot(close_price, type = "l", main = "S&P 500 Daily Close Price", xlab = "Date", ylab = "Level")
+plot(volume, type = "l", main = "S&P 500 Daily Trading Volume", xlab = "Date", ylab = "Shares Traded (Million)")
+# Index by row and column
+close_price["2023-01-01", ]    # All columns for jan
+close_price["2023-01-01", 1]   # First column for January 1, 2023
+close_price[, 1]               # First column for all 
+close_price[1:5, ] 
+close_price["2023-01-01/2023-01-05"]  # Data from January 1 to January 5, 2023
+close_price["2023-01"]  #jan 2023
+volume[volume[, 1] > 8000, ]#only vol > 8000
+# First 3 days
+first(close_price, "3 days")
+# Last week
+last(close_price, "1 week")
+
+plot(close_price["2020/2024"], type = "l", main = "S&P 500 Daily Close Price", xlab = "Date", ylab = "Level")
+plot(volume["2020-01-1/2024-06-30"], type = "l", main = "S&P 500 Daily Trading Volume", xlab = "Date", ylab = "Shares Traded (Million)")
+```
+
+```{r}
+
+#f
+merged_xts <- merge(close_price, volume)
+print(merged_xts)
+bound_xts <- cbind(close_price, volume)
+print(bound_xts)
+#g
+open <- xts(df[, "Open"], order.by = df$Date)
+merged_xts <- merge(merged_xts, open)
+
+# Convert the Merged xts Object to a Data Frame
+#picture shows file in my working directory
+merged_df <- data.frame(Date = index(merged_xts), coredata(merged_xts))
+write.csv(merged_xts, file = "sp500.csv", row.names = FALSE)
+```
+
+![](images/clipboard-1243989292.png)

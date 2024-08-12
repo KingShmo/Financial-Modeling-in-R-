@@ -1,0 +1,56 @@
+---
+title: "Anish Ketha - Practice 6 - R Functions"
+format: html
+editor: visual
+---
+
+## Practice 6 Answers
+
+### Exercise 1
+
+```{r}
+#part a (area)
+
+calculateArea <- function(length, width) {
+    
+    area <- length * width
+    
+    return(area)
+}
+
+# test
+result <- calculateArea(10, 10)
+
+print(result)
+#part b
+# Define a function to check if a number is even
+isEven <- function(number) {
+    
+    if (number %% 2 == 0) {
+        
+        return(TRUE)
+    } else {
+        
+        return(FALSE)
+    }
+}
+
+print(isEven(11))
+#part c 
+rangeSum <- function(a = 1, b = 100) {
+   
+    total <- 0
+    
+   
+    for (i in a:b) {
+      
+        total <- total + i
+    }
+    
+   
+    return(total)
+}
+
+
+print(rangeSum(1,2))
+```

@@ -1,0 +1,140 @@
+---
+title: "Anish Ketha - Practice 16 - Fundamental Analysis"
+format: html
+editor: visual
+---
+
+## 
+
+# **Practice 16 Answers**
+
+# **Exercise 1: Value Investing Strategies**
+
+```{r}
+decile_sorts <- function(datalink, yearq, signal, description, plot = TRUE){
+    # Load the dataset
+    data <- read.csv(paste(datalink, as.character(yearq),".csv", sep = ""))
+    df_test <- data[, c("yearq","ticker","sp500","r1000","r2000","ret","market_equity")]
+    df_test$signal <- data[[signal]]
+    
+    df_test <- na.omit(df_test)
+    
+    # Sort the data by market_equity from low to high
+    df_test <- df_test[order(df_test$signal, na.last = TRUE), ]
+    
+    # Assign rankings 
+    df_test$rank <- rank(df_test$signal, ties.method = "first")
+    
+    # Create decile 
+    df_test$decile <- cut(df_test$rank, 
+                          breaks = 10,
+                          include.lowest = TRUE, labels = 1:10)
+    
+    # Calculate average returns for each decile
+    equal_weighted_decile_returns <- tapply(df_test$ret, df_test$decile, mean, na.rm = TRUE)
+     
+    if (plot == TRUE) {
+        barplot(equal_weighted_decile_returns * 100, names.arg = 1:10,  
+                main = paste(description, yearq), 
+                xlab = "Decile", ylab = "%", col = "blue")
+    }
+    return(equal_weighted_decile_returns)
+}
+library(zoo)
+library(xts)
+library(quantmod)
+```
+
+# My path
+
+```{r}
+datalink <- "Stock Picking Data/Stock Picking Data/Stock Data "
+yearq <- 200304
+signal <- "be_me"
+description <- "Value Investing: Book-to-Market Equity"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Plot Earnings-to-Price
+
+```{r}
+yearq <- 200304
+signal <- "ni_me"
+description <- "Value Investing: Earnings-to-price"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Plot Dividend Yield
+
+```{r}
+yearq <- 200304
+signal <- "div12m_me"
+description <- "Value Investing: Dividend yield"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Plot Payout Yield
+
+```{r}
+yearq <- 200304
+signal <- "eqpo_me"
+description <- "Value Investing: Payout yield"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Exercise 2: Quality Investing Strategies 
+
+```{r}
+yearq <- 202104
+signal <- "gp_at"
+description <- "Quality Investing: Gross profits-to-assets"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Plot Quarterly Return on Assets
+
+```{r}
+yearq <- 202104
+signal <- "niq_at"
+description <- "Quality Investing: Quarterly return on assets"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Plot Operating Leverage
+
+```{r}
+yearq <- 202104
+signal <- "opex_at"
+description <- "Quality Investing: Operating leverage"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# 

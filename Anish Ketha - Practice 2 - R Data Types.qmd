@@ -1,0 +1,101 @@
+---
+title: "Anish Ketha - Practice 2 - R Data Types.qmd"
+format: html
+editor: visual
+---
+
+## Practice 2 Answers
+
+### Exercise 1
+
+```{r}
+Number <- 10
+number <- 100
+print(Number)
+print(number)
+```
+
+### Exercise 2
+
+```{r}
+x1 <- 1
+x2 <- 10
+x3 <- 100
+ls(pattern = "x")
+rm(list = ls(pattern = "x"))
+ls(pattern = "x")
+```
+
+### Exercise 3
+
+```{r}
+stringR <- "R"
+stringIs <- "is"
+stringAwesome <- "awesome"
+stringExclamationPoint <- "!"
+combined <- paste(stringR, stringIs, stringAwesome, stringExclamationPoint, sep = " ")
+print(combined)
+```
+
+### Exercise 4
+
+```{r}
+n1 <- 6
+n2 <- 12
+answer <- paste("The result of multiplying", n1, "by", n2, "is", n1*n2)
+print(answer)
+answer2 <- cat("The result of multiplying", n1, "by", n2, "is", n1*n2)
+print(answer2)
+```
+
+### Exercise 5
+
+```{r}
+daysInMay <- Sys.Date() - as.Date("1990-05-03")
+print(daysInMay)
+```
+
+### Exercise 6
+
+```{r}
+date <- as.Date("May 3, 1990", format = "%b %d, %Y")
+newDate <- format(date, "%m/%d/%Y")
+print(newDate)
+```
+
+### Exercise 7
+
+```{r}
+print("PREDICTION: FALSE")
+x <- 5; x < 20 & x > 10
+print("PREDICTION: TRUE")
+x <- 5; x == 10 | x != 20
+print("PREDICTION: FALSE")
+x <- 5; !(x > 10 | x < 20)
+```
+
+### Exercise 8
+
+```{r}
+#Predictions:
+#-Inf
+#Inf
+#Inf
+#0
+#TRUE
+#FALSE
+#TRUE
+#NaN
+#NaN
+#Inf
+Inf * -9
+Inf - 100
+Inf + Inf
+-59 / Inf
+-Inf < Inf
+Inf > Inf
+Inf == Inf
+Inf / Inf
+0 / 0
+10 / 0
+```

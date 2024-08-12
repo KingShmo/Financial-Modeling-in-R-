@@ -1,0 +1,66 @@
+---
+title: "Anish Ketha - Practice 4 - Data Frame"
+format: html
+editor: visual
+---
+
+## Practice 4 Answers
+
+### Exercise 1
+
+```{r}
+df <- data.frame(
+    name = c("Michael", "Lois", "Peter", "Jane", "Frank", "Clark"),
+    age = c(25, 30, 15, 27, 1, 43),
+    funny = c("High", "High", "Low", "Med", "High", "Low")
+)
+print(df)
+
+subset <- df[, c("name", "age")]
+subset
+
+df$max_heart_rate <- 220 - df$age
+df
+
+highFunny <- df[df$funny == "High", "name"]
+print(highFunny)
+
+youngHighFunny<- df[df$funny == "High" & df$age < 10, "name"]
+print(youngHighFunny)
+
+str(df)
+summary(df)
+```
+
+### Exercise 2
+
+```{r}
+#part a
+df1 <- data.frame(
+    name = c("Michael", "Lois", "Peter", "Jane", "Frank", "Clark"), 
+    age = c(25, 30, 15, 27, 1, 43),                                   
+    funny = c("High", "High", "Low", "Med", "High", "Low")           
+)
+
+#part b
+df2 <- data.frame(
+    name = c("Michael", "Lois", "Peter", "Jane", "Frank", "Clark"),   
+    age = c(25, 30, 15, 27, 1, 43),                                    
+    funny = factor(c("High", "High", "Low", "Med", "High", "Low"))     
+)
+plot(df2$funny)
+
+#part c
+plot(df2$funny)
+#PART D
+
+df3 <- data.frame(
+    name = c("Michael", "Lois", "Peter", "Jane", "Frank", "Clark"),   
+    age = c(25, 30, 15, 27, 1, 43),                                    
+    funny = factor(c("High", "High", "Low", "Med", "High", "Low"),     
+                   levels = c("Low", "Med", "High"))                  
+)
+plot(df3$funny)
+```
+
+### 

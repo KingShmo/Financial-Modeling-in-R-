@@ -1,0 +1,92 @@
+---
+title: "Anish Ketha - Practice 3 - Vector and Matrix"
+format: html
+editor: visual
+---
+
+## Practice 3 Answers
+
+### Exercise 1
+
+```{r}
+x <- c(1, 2, 3, 4)
+y <- c(11, 12, 13, 14)
+z <- c(111, 112, 113, 114)
+
+combinedVectors <- c(x, y, z)
+
+print(combinedVectors)
+```
+
+### Exercise 2
+
+```{r}
+x <- c(Inf, NaN, NA, 10)
+is.na(x)
+z <- c(1, 2, 3, 4, 5, NA)
+anyNA(z)
+```
+
+### Exercise 3
+
+```{r}
+rand <- rnorm(100)
+plot(rand) 
+```
+
+### Exercise 4
+
+```{r}
+x <- seq(11, 20, 1)
+names(x) <- letters[1:10]
+print(x)
+
+a <- x[c(7, 8, 9)]
+print(a)  
+b <- x[7:9]
+print(b)
+index <- c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE)
+c <- x[index]
+print(c)
+d <- x[c('g', 'h', 'i')]
+print(d)
+e <- x[c(-1, -2, -3, -4, -5, -6, -10)]
+print(e)
+```
+
+### Exercise 5
+
+```{r}
+temp <- c(10, 15, 30, 90, 100, 120)
+C <- (temp - 32) * 5/9
+
+print(C)
+```
+
+### Exercise 6
+
+```{r}
+pos <- c(1000, 2000, 3000, -1500, 5000)
+
+total <- sum(pos)
+
+portfolioWeights <- pos / total
+
+print(portfolioWeights)
+```
+
+### Exercise 7
+
+```{r}
+a <- matrix(seq(1, 20), nrow = 4)
+print(a)
+
+result <- cbind(seq(11, 20), seq(101, 119, 2), seq(501, 528, 3))
+print(result)
+
+result <- rbind(seq(11, 20), seq(101, 119, 2), seq(501, 528, 3))
+print(result)
+
+submatrix <- result[2:3, 5:8]
+print(submatrix)
+```

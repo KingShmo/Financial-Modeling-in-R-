@@ -1,0 +1,47 @@
+---
+title: "Practice 1"
+format: html
+author: Anish Ketha 
+editor: visual
+---
+
+## Practice 1 Answers
+
+### Exercise 1
+
+```{r}
+365 %% 7 
+```
+
+### Exercise 2
+
+-   **Create a new code chunk**:
+    -   `Ctrl + Alt + I`
+-   **Run the current code chunk**:
+    -   `Ctrl + Alt + C`
+-   **Run current line/selection**:
+    -   `Ctrl + Enter`
+
+### Exercise 3
+
+```{r}
+variable <- 90 * (32/4)
+print(variable)
+```
+
+### Exercise 4
+
+```{r}
+variable2 <- 4.38e9
+print(variable2)
+```
+
+### Exercise 5
+
+```{r}
+principal <- 1000 
+time <- 5 
+investment <- 2000 
+rateOfReturn <- (2000/1000)^(1/5) - 1 
+print(rateOfReturn)
+```

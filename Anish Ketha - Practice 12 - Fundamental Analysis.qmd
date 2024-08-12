@@ -1,0 +1,105 @@
+---
+title: "Anish Ketha - Practice 12 - Fundamental Analysis"
+format: html
+editor: visual
+---
+
+## **Practice 12 Answers** 
+
+#### **Exercise 1**
+
+```{r}
+#market timing strat
+market_timing_strategy <- function(data, TradingRule, Leverage = 1, Frequency = "Monthly", TradingPeriod){
+    # Generate trading signals
+    data$RetRf <- data$Ret - data$Rf
+    data$TradingRule <- lag(data$TradingRule,1)
+    
+    data <- na.omit(data[TradingPeriod])
+
+    # Calculate cumulative returns
+    data$Strategy_RetRf <- Leverage * data$TradingRule * data$RetRf 
+    data$Strategy_Cumulative_Value <- cumprod(1 + data$Strategy_RetRf)  
+    
+    if (Frequency == "Daily") {
+      print(paste('Annualized Excess Return: ', round(mean(data$Strategy_RetRf)*252*100, 2), '%'))
+      print(paste('Annualized Volatility: ', round(sd(data$Strategy_RetRf)*sqrt(252)*100, 2), '%'))
+      print(paste('Annualized Sharpe Ratio: ', round(mean(data$Strategy_RetRf)/sd(data$Strategy_RetRf)*sqrt(252), 2)))
+    } else if (Frequency == "Monthly") {
+      print(paste('Annualized Excess Return: ', round(mean(data$Strategy_RetRf)*12*100, 2), '%'))
+      print(paste('Annualized Volatility: ', round(sd(data$Strategy_RetRf)*sqrt(12)*100, 2), '%'))
+      print(paste('Annualized Sharpe Ratio: ', round(mean(data$Strategy_RetRf)/sd(data$Strategy_RetRf)*sqrt(12), 2)))
+    }
+    
+    plot(index(data), data$Strategy_Cumulative_Value, type = "l", col = "blue", lwd = 2, 
+         ylab = "$", xlab = "Date",
+         main = paste('Value of $1 invested in the', Frequency, 'Trading Strategy with', Leverage, 'Leverage', TradingPeriod))
+    
+    return(data)
+}
+
+library(quantmod)
+spy <- getSymbols("SPY", src = "yahoo", auto.assign = FALSE, from = '1993-01-01', to = '2024-06-30')
+spy_ret <- monthlyReturn(Ad(spy))
+index(spy_ret) <- as.Date(as.yearmon(index(spy_ret)), frac = 1)
+colnames(spy_ret) <- "Ret"
+
+rf <- getSymbols("DFF", src = "FRED", auto.assign = FALSE, from = '1993-01-01', to = '2024-06-30')
+# Convert Federal Fund Rates to monthly frequency by dividing 12  
+monthly_endpoints <- endpoints(rf, on = "months")
+rf <- rf[monthly_endpoints]/12/100
+colnames(rf) <- "Rf"
+
+return_data <- merge(spy_ret, rf)
+head(return_data, 10)
+tail(return_data, 10)
+
+# Load CSV file
+econ_indicators_url <- "https://www.dropbox.com/scl/fi/gi2ou5sl1ved66v890p41/Monthly-Market-Return-Predictors.csv?rlkey=15g6j4iel3yxyr810d7cmx7vm&dl=1"
+
+econ_indicators <- read.csv(econ_indicators_url)
+
+# Convert predictors data to xts object
+econ_indicators$Date <- as.Date(paste0(econ_indicators$yyyymm, "01"), format = "%Y%m%d")
+
+# Adjust the index of spy_ret to the month end
+econ_indicators$Date <- as.Date(as.yearmon(econ_indicators$Date), frac = 1)
+
+# Removes the original yyyymm column
+econ_indicators$yyyymm <- NULL
+
+econ_indicators <- xts(econ_indicators[,-ncol(econ_indicators)], order.by = econ_indicators$Date)
+
+head(econ_indicators, 10)
+
+tail(econ_indicators, 10)
+
+#step 2 creating trading signal
+default_yield_spread <- econ_indicators$BAA - econ_indicators$AAA
+colnames(default_yield_spread) <- "DFY"
+default_yield_spread <- na.omit(default_yield_spread)
+plot(default_yield_spread, main = "Default Yield Spread", xlab = "Date", ylab = "")
+
+test_data <- merge(return_data, default_yield_spread, join = "inner")
+test_data$TradingSignal <- test_data$DFY
+
+head(test_data, 10)
+tail(test_data, 10)
+
+#step 3+4 building trading rule and apply backtesting function
+test_data$TradingRule <- - test_data$TradingSignal
+data_backtest <- market_timing_strategy(data = test_data, TradingRule = TradingRule, Frequency = "Monthly", TradingPeriod = "1993/2024")
+```
+
+```{r}
+#correct trading rule 
+test_data$TradingRule <- test_data$TradingSignal
+data_backtest <- market_timing_strategy(data = test_data, TradingRule = TradingRule, Frequency = "Monthly", TradingPeriod = "1993/2024")
+
+#adjust leverage 
+data_backtest <- market_timing_strategy(data = test_data, TradingRule = TradingRule, Leverage = 50, Frequency = "Monthly", TradingPeriod = "1993/2024")
+```
+
+Why a larger DFY (higher corporate bond risks) predict a higher stock market return in the future?
+
+I think it has to do with business/economic cycles as an increase in DFY may also reflect expectations of higher inflation or rising interest rates. Higher inflation expectations can lead to increased interest rates, which reduce the PV of future cash and once inflation stabilizes, stocks can become more attractive leading to higher stock market returns (and the cycle repeats).

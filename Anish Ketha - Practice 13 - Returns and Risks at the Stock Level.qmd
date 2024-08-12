@@ -1,0 +1,112 @@
+---
+title: "Anish Ketha - Practice 13 - Returns and Risks at the Stock Level"
+format: html
+editor: visual
+---
+
+## **Practice 13 Answers**
+
+## **Exercise 1**
+
+```{r}
+library(zoo)
+library(xts)
+library(quantmod)
+
+# Define stock symbols to be downloaded
+symbols <- c("AAPL", "GOOG", "AMZN", "MSFT", "META", "NVDA", "TSLA")
+
+# Download stock data
+getSymbols(symbols, src = "yahoo", from = "2000-01-01", to = "2023-12-31")
+```
+
+```{r}
+# Creates an empty list to store the daily returns for each stock symbol.
+daily_returns_list <- list()
+
+# Loop through each symbol, calc returns, and store
+for (symbol in symbols) {
+  symbol_data <- get(symbol)  # Get the data for the current symbol
+  daily_returns <- dailyReturn(Ad(symbol_data))  # Calculate daily returns using adjusted close prices
+  colnames(daily_returns) <- symbol  # Sets the column name of the daily returns to the current stock symbol.
+  daily_returns_list[[symbol]] <- daily_returns  # Stores the daily returns in the list with the stock symbol as the key.
+}
+
+# Combine into xts object
+MagnificentSeven <- do.call(cbind, daily_returns_list)
+MagnificentSeven <- na.omit(MagnificentSeven)
+
+
+head(MagnificentSeven, 10)
+
+```
+
+```{r}
+tail(MagnificentSeven, 10)
+
+```
+
+```{r}
+# Calculate the annualized mean returns in percentage
+annualized_means <- colMeans(MagnificentSeven) * 252 * 100
+
+# Calculate the annualized standard deviations in percentage
+annualized_stds <- apply(MagnificentSeven, 2, sd) * sqrt(252) * 100
+
+# Calculate the annualized Sharpe ratios
+annualized_sr <- annualized_means/annualized_stds
+
+
+cat("Annualized Mean Returns (in %):\n")
+print(round(annualized_means,2))
+```
+
+```{r}
+cat("Annualized Standard Deviations (in %):\n")
+print(round(annualized_stds,2))
+```
+
+```{r}
+cat("Annualized Sharpe Ratio (in %):\n")
+print(round(annualized_sr,2))
+```
+
+```{r}
+#avg of mean and std
+cat("The Average of Annualized Mean Returns (in %):\n")
+mean(annualized_means)
+```
+
+```{r}
+cat("The Average of Annualized Standard Deviations (in %):\n")
+mean(annualized_stds)
+```
+
+# Forming Portfolio for diversification benefits
+
+```{r}
+# Calculate portfolio returns
+equal_weighted_returns <- rowMeans(MagnificentSeven, na.rm = TRUE)
+tail(equal_weighted_returns,10)
+```
+
+```{r}
+# Annualized mean return 
+annualized_portfolio_mean <- mean(equal_weighted_returns) * 252 * 100
+
+# Annualized standard deviation 
+annualized_portfolio_sd <- sd(equal_weighted_returns) * sqrt(252) * 100
+
+cat("Annualized Mean Return of Equal-Weighted Portfolio (in %):\n")
+print(annualized_portfolio_mean)
+```
+
+```{r}
+cat("Annualized Standard Deviation of Equal-Weighted Portfolio (in %):\n")
+print(annualized_portfolio_sd)
+```
+
+```{r}
+cat("Annualized Sharpe Ratio of Equal-Weighted Portfolio:\n")
+print(round(annualized_portfolio_mean/annualized_portfolio_sd,2))
+```

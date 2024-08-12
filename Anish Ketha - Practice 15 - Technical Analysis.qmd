@@ -1,0 +1,86 @@
+---
+title: "Anish Ketha - Practice 15 - Technical Analysis"
+format: html
+editor: visual
+---
+
+## 
+
+# **Practice 15 Answers**
+
+# Read data and add libs
+
+```{r}
+decile_sorts <- function(datalink, yearq, signal, description, plot = TRUE){
+    # Load the dataset
+    data <- read.csv(paste(datalink, as.character(yearq),".csv", sep = ""))
+    df_test <- data[, c("yearq","ticker","sp500","r1000","r2000","ret","market_equity")]
+    df_test$signal <- data[[signal]]
+    
+    df_test <- na.omit(df_test)
+    
+    # Sort the data by market_equity from low to high
+    df_test <- df_test[order(df_test$signal, na.last = TRUE), ]
+    
+    # Assign rankings to the sorted data
+    df_test$rank <- rank(df_test$signal, ties.method = "first")
+    
+    # Create decile rankings based on market_equity
+    df_test$decile <- cut(df_test$rank, 
+                          breaks = 10,
+                          include.lowest = TRUE, labels = 1:10)
+    
+    # Calculate average returns for each decile
+    equal_weighted_decile_returns <- tapply(df_test$ret, df_test$decile, mean, na.rm = TRUE)
+     
+    if (plot == TRUE) {
+        barplot(equal_weighted_decile_returns * 100, names.arg = 1:10,  
+                main = paste(description, yearq), 
+                xlab = "Decile", ylab = "%", col = "blue")
+    }
+    return(equal_weighted_decile_returns)
+}
+library(zoo)
+library(xts)
+library(quantmod)
+```
+
+# My path
+
+```{r}
+datalink <- "Stock Picking Data/Stock Picking Data/Stock Data "
+yearq <- 199904
+signal <- "ret_12_1"
+description <- "Momentum Investing: Price momentum t-12 to t-1"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Plot t-3 to t-1
+
+```{r}
+yearq <- 199904
+signal <- "ret_3_1"
+description <- "Momentum Investing: Price momentum t-3 to t-1"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```
+
+# Plot current price to high price over year
+
+```{r}
+yearq <- 199904
+signal <- "prc_highprc_252d"
+description <- "Momentum Investing: Current price to high price over last year"
+momentum_deciles <- decile_sorts(datalink = datalink, yearq = yearq, signal = signal, description = description)
+```
+
+```{r}
+momentum_deciles
+```

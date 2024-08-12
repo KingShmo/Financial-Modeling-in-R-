@@ -1,0 +1,85 @@
+---
+title: "Anish Ketha - Practice 8 - S&P 500 Index, Interest Rate, and Economic Indicators"
+format: html
+editor: visual
+---
+
+## Practice 8 Answers
+
+### Exercise 1
+
+```{r}
+library(quantmod)
+getSymbols("^IXI", src = "yahoo", from = '1900-01-01', to = Sys.Date())
+# Plot the closing prices of QQQ using chartSeries
+chartSeries(IXI, 
+            theme = chartTheme("white"), 
+            TA = NULL, 
+            main = "QQQ Closing Prices")
+#download history
+getSymbols("QQQ", src = "yahoo", from = '1900-01-01', to = Sys.Date())
+#plot closing prices
+chartSeries(QQQ, 
+            theme = chartTheme("white"), 
+            TA = 'addVo()', # Remove additional technical analysis indicators
+            main = "QQQ Closing Prices")
+```
+
+### Exercise 2
+
+```{r}
+#daily returns
+qqq_daily_ret <- dailyReturn(Ad(QQQ))
+
+#monthly 
+qqq_monthly_ret <- monthlyReturn(Ad(QQQ))
+
+# annual
+qqq_annual_ret <- yearlyReturn(Ad(QQQ))
+
+# Plot daily returns
+plot(index(qqq_daily_ret), coredata(qqq_daily_ret), type = "l", col = "blue", 
+     main = "QQQ Daily Returns", xlab = "Date", ylab = "Daily Return")
+
+# Plot monthly 
+plot(index(qqq_monthly_ret), coredata(qqq_monthly_ret), type = "l", col = "green", 
+     main = "QQQ Monthly Returns", xlab = "Date", ylab = "Monthly Return")
+# Plot annual 
+plot(index(qqq_annual_ret), coredata(qqq_annual_ret), type = "l", col = "red", 
+     main = "QQQ Annual Returns", xlab = "Date", ylab = "Annual Return")
+
+```
+
+### Exercise 3
+
+```{r}
+# Function to plot histogram with density overlay
+plot_hist_density <- function(returns, title, bins = 30) {
+  hist(returns, 
+       probability = TRUE,  # Normalize the histogram to represent a density
+       main = title,  # Title of the histogram
+       col = "lightblue",  # Color of the bars
+       border = "black",  # Color of the borders
+       xlab = "Returns",  # x-axis
+       ylab = "Density",  # y-axis
+       breaks = bins)  # breaks in histogram
+  
+  # Overlay normal density curve
+  mu <- mean(returns, na.rm = TRUE)
+  sigma <- sd(returns, na.rm = TRUE)
+  curve(dnorm(x, mean = mu, sd = sigma), 
+        col = "red", 
+        lwd = 2, 
+        add = TRUE)
+}
+
+# Set up plotting area to have multiple plots in one window
+par(mfrow = c(1, 3))  # 1 row and 3 columns
+
+# Plot histograms with different return horizons
+plot_hist_density(coredata(qqq_daily_ret), "QQQ Daily Returns")
+plot_hist_density(coredata(qqq_monthly_ret), "QQQ Monthly Returns")
+plot_hist_density(coredata(qqq_annual_ret), "QQQ Annual Returns")
+# Reset plotting area
+par(mfrow = c(1, 1))
+```

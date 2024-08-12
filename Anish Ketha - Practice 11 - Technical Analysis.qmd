@@ -1,0 +1,88 @@
+---
+title: "Anish Ketha - Practice 11 - Technical Analysis"
+format: html
+editor: visual
+---
+
+## **Practice 11 - Technical Analysis**
+
+#### **Exercise 1**
+
+```{r}
+market_timing_strategy <- function(data, TradingRule, Leverage = 1, Frequency = "Monthly", TradingPeriod){
+    # Generate trading signals
+    data$RetRf <- data$Ret - data$Rf
+    data$TradingRule <- lag(data$TradingRule,1)
+    
+    data <- na.omit(data[TradingPeriod])
+
+    # Calculate returns
+    data$Strategy_RetRf <- Leverage * data$TradingRule * data$RetRf 
+    data$Strategy_Cumulative_Value <- cumprod(1 + data$Strategy_RetRf)  
+    
+    if (Frequency == "Daily") {
+      print(paste('Annualized Excess Return: ', round(mean(data$Strategy_RetRf)*252*100, 2), '%'))
+      print(paste('Annualized Volatility: ', round(sd(data$Strategy_RetRf)*sqrt(252)*100, 2), '%'))
+      print(paste('Annualized Sharpe Ratio: ', round(mean(data$Strategy_RetRf)/sd(data$Strategy_RetRf)*sqrt(252), 2)))
+    } else if (Frequency == "Monthly") {
+      print(paste('Annualized Excess Return: ', round(mean(data$Strategy_RetRf)*12*100, 2), '%'))
+      print(paste('Annualized Volatility: ', round(sd(data$Strategy_RetRf)*sqrt(12)*100, 2), '%'))
+      print(paste('Annualized Sharpe Ratio: ', round(mean(data$Strategy_RetRf)/sd(data$Strategy_RetRf)*sqrt(12), 2)))
+    }
+    
+    plot(index(data), data$Strategy_Cumulative_Value, type = "l", col = "blue", lwd = 2, 
+         ylab = "$", xlab = "Date",
+         main = paste('Value of $1 invested in the', Frequency, 'Trading Strategy with', Leverage, 'Leverage', TradingPeriod))
+    
+    return(data)
+}
+
+library(quantmod)
+
+spy <- getSymbols("SPY", src = "yahoo", auto.assign = FALSE, from = '1993-01-01', to = '2024-06-30')
+spy_daily_ret <- dailyReturn(Ad(spy))
+colnames(spy_daily_ret) <- "Ret"
+
+rf <- getSymbols("DFF", src = "FRED", auto.assign = FALSE, from = '1993-01-01', to = '2024-06-30')
+# Convert rates to daily frequency by dividing 265  
+rf <- rf/365/100
+colnames(rf) <- "Rf"
+
+return_data <- merge(spy_daily_ret, rf, join = 'inner')
+head(return_data, 10)
+
+tail(return_data, 10)
+
+#step 2 
+spy_daily_ret <- dailyReturn(Ad(spy))
+spy_sma <- rollapply(spy_daily_ret, width = 1, FUN = mean, by = 1, fill = NA, align = "right")
+colnames(spy_sma) <- "SMA1Day"
+
+test_data <- merge(return_data, spy_sma)
+test_data$TradingSignal <- test_data$SMA1Day
+
+head(test_data, 10)
+
+tail(test_data, 10)
+
+#step 3 + 4 building trade rules and applying backtest function
+test_data$TradingRule <- - test_data$TradingSignal
+backtest_sma1 <- market_timing_strategy(data = test_data, TradingRule = TradingRule, Frequency = "Daily", TradingPeriod = "1993/2024")
+data_backtest <- market_timing_strategy(data = test_data, TradingRule = TradingRule, Leverage = 30, Frequency = "Daily", TradingPeriod = "1993/2024")
+
+#21 day strat 
+spy_daily_ret <- dailyReturn(Ad(spy))
+spy_sma <- rollapply(spy_daily_ret, width = 21, FUN = mean, by = 1, fill = NA, align = "right")
+colnames(spy_sma) <- "SMA21Day"
+
+test_data <- merge(return_data, spy_sma)
+test_data$TradingSignal <- test_data$SMA21Day
+
+head(test_data, 10)
+tail(test_data, 10)
+
+#step 3 + 4 building test rule and applying backtest function
+test_data$TradingRule <- - test_data$TradingSignal
+backtest_sma1 <- market_timing_strategy(data = test_data, TradingRule = TradingRule, Frequency = "Daily", TradingPeriod = "1993/2024")
+data_backtest <- market_timing_strategy(data = test_data, TradingRule = TradingRule, Leverage = 100, Frequency = "Daily", TradingPeriod = "1993/2024")
+```
